@@ -98,14 +98,14 @@ func (s *VaultSecret) NewToken() (string, error) {
 	return s.Login()
 }
 
-func insertSliceString(a []string, index int, value string) []string {
-	if len(a) == index { // nil or empty slice or after last element
-		return append(a, value)
-	}
-	a = append(a[:index+1], a[index:]...) // index < len(a)
-	a[index] = value
-	return a
-}
+// func insertSliceString(a []string, index int, value string) []string {
+// 	if len(a) == index { // nil or empty slice or after last element
+// 		return append(a, value)
+// 	}
+// 	a = append(a[:index+1], a[index:]...) // index < len(a)
+// 	a[index] = value
+// 	return a
+// }
 
 // WriteSecret writes a secret to Vault VaultClient at path p with secret value s
 func (s *VaultSecret) WriteSecret(sec map[string]interface{}) (map[string]interface{}, error) {
@@ -114,7 +114,7 @@ func (s *VaultSecret) WriteSecret(sec map[string]interface{}) (map[string]interf
 	if len(pp) < 2 {
 		return secrets, errors.New("secret path must be in kv/path/to/secret format")
 	}
-	pp = insertSliceString(pp, 1, "data")
+	// pp = insertSliceString(pp, 1, "data")
 	s.Path = strings.Join(pp, "/")
 	log.Printf("vault.PutSecret(%+v)\n", s.Path)
 	if s == nil {
