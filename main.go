@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"strings"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -168,11 +170,43 @@ func getSecrets() ([]corev1.Secret, error) {
 	return slo, err
 }
 
+// separateCerts ensures that certificates are configured appropriately
+func separateCerts(name string, concat_cert bool, ca, crt, key []byte) *Certificate {
+	b := "-----BEGIN CERTIFICATE-----\n"
+	str := strings.Split(string(crt), b)
+	nc := b + str[1]
+	ch := b + strings.Join(str[2:len(str)], b)
+	cert := &Certificate{}
+	if concat_cert == true {
+		fmt.Println("concatenating certificate")
+		cert = &Certificate{
+			SecretName:  name,
+			Certificate: []byte(nc+ch),
+			Key:         key,
+		}
+	} else {
+		fmt.Println("not concatenating certificate")
+		cert = &Certificate{
+			SecretName:  name,
+			Chain:       []byte(ch),
+			Certificate: []byte(nc),
+			Key:         key,
+		}
+	}
+
+	return cert
+}
+
 // secretToCert converts a k8s secret to a properly-formatted TLS Certificate
-func secretToCert(s corev1.Secret) *Certificate {
-	c := separateCerts(s.ObjectMeta.Name, s.Data["ca.crt"], s.Data["tls.crt"], s.Data["tls.key"])
+func secretToCert(s corev1.Secret) *Certificate {	
+	c := separateCerts(s.ObjectMeta.Name, false, s.Data["ca.crt"], s.Data["tls.crt"], s.Data["tls.key"])
+	fmt.Println(s.Annotations)
+	if s.Annotations[operatorName+"/concatenate-certificates"] == "true" {
+		fmt.Println("detected concatenation of certificate")
+		c = separateCerts(s.ObjectMeta.Name, true, s.Data["ca.crt"], s.Data["tls.crt"], s.Data["tls.key"])
+	}	
 	c.Annotations = s.Annotations
-	c.Labels = s.Labels
+	c.Labels = s.Labels	
 	return c
 }
 

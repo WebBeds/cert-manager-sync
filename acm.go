@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"os"
-	"strings"
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -48,24 +47,9 @@ func CreateAWSSession(roleArn string, region string) (*session.Session, *aws.Con
 	return sess, cfg, nil
 }
 
-// separateCerts ensures that certificates are configured appropriately
-func separateCerts(name string, ca, crt, key []byte) *Certificate {
-	b := "-----BEGIN CERTIFICATE-----\n"
-	str := strings.Split(string(crt), b)
-	nc := b + str[1]
-	ch := b + strings.Join(str[2:len(str)], b)
-	cert := &Certificate{
-		SecretName:  name,
-		Chain:       []byte(ch),
-		Certificate: []byte(nc),
-		Key:         key,
-	}
-	return cert
-}
-
 // separateCertsACM wraps separateCerts and returns an acm ImportCertificateInput Object
 func separateCertsACM(name string, ca, crt, key []byte) *acm.ImportCertificateInput {
-	cert := separateCerts(name, ca, crt, key)
+	cert := separateCerts(name, false, ca, crt, key)
 	im := &acm.ImportCertificateInput{
 		CertificateChain: cert.Chain,
 		Certificate:      cert.Certificate,

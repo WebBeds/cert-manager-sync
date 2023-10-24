@@ -183,6 +183,12 @@ func handleVaultCerts(ss []corev1.Secret) {
 			"certificate": c.Certificate,
 			"chain":       c.Chain,
 			"key":         c.Key,
+		}		
+		if s.Annotations[operatorName+"/concatenate-certificates"] == "true" {
+			cd = map[string]interface{}{
+				"certificate": c.Certificate,
+				"key":         c.Key,
+			}
 		}
 		_, err = vs.WriteSecret(cd)
 		if err != nil {
